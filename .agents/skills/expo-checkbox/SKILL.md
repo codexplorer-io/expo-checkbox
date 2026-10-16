@@ -6,36 +6,72 @@ description: Instructions and guidelines for using @codexporer.io/expo-checkbox 
 # `@codexporer.io/expo-checkbox` Skill
 
 ## Overview
-`@codexporer.io/expo-checkbox` provides a theme-integrated binary selection toggle component supporting custom sizes, disabled states, and dynamic colors derived from `@codexporer.io/expo-app-theme`.
+`@codexporer.io/expo-checkbox` provides a theme-integrated checkbox component for Expo and React Native. Supports boolean or tri-state statuses (`checked`, `unchecked`, `indeterminate`), inline labels, customizable icons, and dynamic colors via `@codexporer.io/expo-app-theme`.
+
+---
+
+## Peer Dependencies
+
+All peer dependencies must be installed in consuming projects:
+- `react`: `*`
+- `react-native`: `*`
+- `@expo/vector-icons`: `*`
+- `@codexporer.io/expo-app-theme`: `*`
+
+---
+
+## Theme Requirement
+
+`Checkbox` calls `useAppTheme()` internally to resolve colors (`theme.primary`, `theme.border`, and `theme.text`). The consuming application must mount `<ThemeProvider>` from `@codexporer.io/expo-app-theme` higher in the component tree.
 
 ---
 
 ## When to Use
-- Multi-selection lists (e.g., selecting multiple photos or project assets).
+- Multi-selection lists (e.g., selecting items or assets).
 - Form agreement checkboxes (terms of service, opt-in settings).
-- Toggle switches in modal options.
+- Tri-state "select all" toggles.
 
 ---
 
 ## Usage Example
 
+### Basic Checkbox with Inline Label
+
 ```tsx
 import React, { useState } from 'react';
-import { View, Text, TouchableOpacity } from 'react-native';
+import { View } from 'react-native';
 import { Checkbox } from '@codexporer.io/expo-checkbox';
 
 export function AgreeCheckboxRow() {
   const [agreed, setAgreed] = useState(false);
 
   return (
-    <TouchableOpacity
-      activeOpacity={0.8}
-      onPress={() => setAgreed(!agreed)}
-      style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}
-    >
-      <Checkbox checked={agreed} onChange={setAgreed} />
-      <Text>I accept the terms and conditions</Text>
-    </TouchableOpacity>
+    <View style={{ padding: 16 }}>
+      <Checkbox
+        checked={agreed}
+        onPress={() => setAgreed(!agreed)}
+        label="I accept the terms and conditions"
+      />
+    </View>
+  );
+}
+```
+
+### Tri-State "Select All" Checkbox
+
+```tsx
+import React from 'react';
+import { Checkbox } from '@codexporer.io/expo-checkbox';
+
+export function SelectAllRow({ allSelected, someSelected, onToggle }) {
+  const status = allSelected ? 'checked' : someSelected ? 'indeterminate' : 'unchecked';
+
+  return (
+    <Checkbox
+      status={status}
+      onPress={onToggle}
+      label="Select All"
+    />
   );
 }
 ```
@@ -48,17 +84,21 @@ export function AgreeCheckboxRow() {
 
 | Prop | Type | Default | Description |
 | :--- | :--- | :--- | :--- |
-| `checked` | `boolean` | `false` | Controlled checked state |
-| `onChange` | `(checked: boolean) => void` | — | Callback invoked with next boolean state |
-| `disabled` | `boolean` | `false` | Disables interaction and reduces opacity |
-| `size` | `number` | `24` | Dimension of checkbox square in points |
-| `checkmarkColor` | `string` | `theme.background` | Color of inner checkmark check icon |
-| `checkedColor` | `string` | `theme.primary` | Background fill when checked |
-| `uncheckedColor` | `string` | `theme.border` | Border stroke color when unchecked |
+| `checked` | `boolean` | `false` | Simple boolean checked state |
+| `status` | `'checked' \| 'unchecked' \| 'indeterminate'` | — | Tri-state status override (takes precedence over `checked`) |
+| `label` | `string \| React.ReactNode` | — | Text label or custom ReactNode rendered beside checkbox |
+| `labelStyle` | `StyleProp<TextStyle>` | — | Custom text style for the label |
+| `onPress` | `() => void` | — | Tap callback handler for the checkbox and label |
+| `color` | `string` | `theme.primary` | Active / indeterminate icon tint |
+| `uncheckedColor` | `string` | `theme.border` | Inactive / unchecked outline icon tint |
+| `size` | `number` | `24` | Icon diameter in points |
+| `disabled` | `boolean` | `false` | Disables touch interactions |
 | `style` | `StyleProp<ViewStyle>` | — | Outer container style override |
 
 ---
 
 ## Critical Rules & Guidelines
-1. **Row Tap Convenience**: Wrap the checkbox and label in a `TouchableOpacity` or `Pressable` with `onPress={() => setChecked(!checked)}` so users can tap anywhere on the label to toggle.
-2. **Colors Automatically Dynamic**: Do not hardcode `checkedColor` unless specific non-theme branding is explicitly needed.
+1. **ThemeProvider Requirement**: `Checkbox` calls `useAppTheme()` and must be mounted within `<ThemeProvider>`.
+2. **Use `onPress`, Not `onChange`**: There is NO `onChange` prop on `Checkbox`. Bind state updates using `onPress={() => setChecked(!checked)}`.
+3. **Use Built-In `label`**: Pass labels directly via `label="..."`. The component automatically structures the icon and label in a row (`gap: 8`), and clicking the label triggers `onPress`. Do not wrap in an unnecessary outer `TouchableOpacity`.
+4. **Hit Slop Included**: `Checkbox` includes built-in `hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}` and `activeOpacity={0.7}`.
